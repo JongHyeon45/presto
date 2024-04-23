@@ -38,7 +38,7 @@ pipeline {
             stages {
                 stage('Setup') {
                     steps {
-                        sh 'apt update && apt install -y awscli git tree'
+                        sh 'apt update && apt install -y awscli git libaio1 libaio-dev tree'
                         sh 'git config --global --add safe.directory ${WORKSPACE}'
                         script {
                             env.PRESTO_COMMIT_SHA = sh(script: "git rev-parse HEAD", returnStdout: true).trim()
@@ -100,6 +100,8 @@ pipeline {
                         echo "build prestodb source code with build version ${PRESTO_BUILD_VERSION}"
                         retry (5) {
                             sh '''
+                                cat jenkins/agent-maven.yaml
+                                cat pom.xml
                                 unset MAVEN_CONFIG && ./mvnw install -DskipTests -B -T 1C -P ci -pl '!presto-docs'
                                 tree /root/.m2/repository/com/facebook/presto/
                             '''
@@ -118,6 +120,11 @@ pipeline {
                                 aws s3 cp presto-server/target/${PRESTO_PKG}  ${AWS_S3_PREFIX}/${PRESTO_BUILD_VERSION}/ --no-progress
                                 aws s3 cp presto-cli/target/${PRESTO_CLI_JAR} ${AWS_S3_PREFIX}/${PRESTO_BUILD_VERSION}/ --no-progress
                             '''
+                        }
+                    }
+                    post {
+                        always {
+                            testNG()
                         }
                     }
                 }
