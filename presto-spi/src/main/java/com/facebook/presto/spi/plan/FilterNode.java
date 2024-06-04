@@ -87,7 +87,7 @@ public final class FilterNode
     @Override
     public List<PlanNode> getSources()
     {
-        return unmodifiableList(singletonList(source));
+        return singletonList(source);
     }
 
     @Override
